@@ -39,6 +39,7 @@ func init() {
 	logFile, _ := os.OpenFile("/data/container/continerd.log", os.O_CREATE|os.O_APPEND|os.O_RDWR, 0655)
 	logrus.SetLevel(logrus.TraceLevel)
 	logrus.SetOutput(io.MultiWriter(os.Stdout, os.Stdout, logFile))
+	logrus.SetReportCaller(true)
 }
 
 type (
