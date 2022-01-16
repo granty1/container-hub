@@ -230,6 +230,7 @@ func (c *client) Start(ctx context.Context, id, checkpointDir string, withStdin 
 		taskOpts = append(taskOpts, withLogLevel(c.logger.Level))
 	}
 
+	// TODO *Grant*: container(containerd) create task
 	t, err = ctr.NewTask(ctx,
 		func(id string) (cio.IO, error) {
 			fifos := newFIFOSet(bundle, libcontainerdtypes.InitProcessName, withStdin, spec.Process.Terminal)
@@ -251,6 +252,7 @@ func (c *client) Start(ctx context.Context, id, checkpointDir string, withStdin 
 	// Signal c.createIO that it can call CloseIO
 	close(stdinCloseSync)
 
+	// TODO *Grant*: container(containerd) start task
 	if err := t.Start(ctx); err != nil {
 		if _, err := t.Delete(ctx); err != nil {
 			c.logger.WithError(err).WithField("container", id).

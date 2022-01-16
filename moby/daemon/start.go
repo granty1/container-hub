@@ -98,6 +98,7 @@ func (daemon *Daemon) ContainerStart(name string, hostConfig *containertypes.Hos
 // container needs, such as storage and networking, as well as links
 // between containers. The container is left waiting for a signal to
 // begin running.
+// TODO *Grant*: dockerd prepare storage and network
 func (daemon *Daemon) containerStart(container *container.Container, checkpoint string, checkpointDir string, resetRestartManager bool) (err error) {
 	start := time.Now()
 	container.Lock()
@@ -178,6 +179,7 @@ func (daemon *Daemon) containerStart(container *container.Container, checkpoint 
 
 	ctx := context.TODO()
 
+	// TODO *Grant*: dockerd call containerd create container
 	err = daemon.containerd.Create(ctx, container.ID, spec, shim, createOptions)
 	if err != nil {
 		if errdefs.IsConflict(err) {
@@ -195,6 +197,8 @@ func (daemon *Daemon) containerStart(container *container.Container, checkpoint 
 	}
 
 	// TODO(mlaventure): we need to specify checkpoint options here
+
+	// TODO *Grant*: dockerd call containerd start container
 	pid, err := daemon.containerd.Start(context.Background(), container.ID, checkpointDir,
 		container.StreamConfig.Stdin() != nil || container.Config.Tty,
 		container.InitializeStdio)

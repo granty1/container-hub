@@ -99,7 +99,7 @@ func NewTaskService(ctx context.Context, publisher shim.Publisher, sd shutdown.S
 }
 
 // service is the shim implementation of a remote shim over GRPC
-type service struct {
+	type service struct {
 	mu          sync.Mutex
 	eventSendMu sync.Mutex
 
@@ -118,7 +118,7 @@ type service struct {
 func (s *service) Create(ctx context.Context, r *taskAPI.CreateTaskRequest) (_ *taskAPI.CreateTaskResponse, err error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-
+	// TODO *Grant*: shim NewContainer
 	container, err := runc.NewContainer(ctx, s.platform, r)
 	if err != nil {
 		return nil, err
@@ -582,6 +582,7 @@ func (s *service) getContainerPids(ctx context.Context, id string) ([]uint32, er
 }
 
 func (s *service) forward(ctx context.Context, publisher shim.Publisher) {
+	// TODO *Grant*: shim forward event
 	ns, _ := namespaces.Namespace(ctx)
 	ctx = namespaces.WithNamespace(context.Background(), ns)
 	for e := range s.events {

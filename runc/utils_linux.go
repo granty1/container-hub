@@ -257,6 +257,7 @@ func (r *runner) run(config *specs.Process) (int, error) {
 		process.Env = append(process.Env, "LISTEN_FDS="+strconv.Itoa(len(r.listenFDs)), "LISTEN_PID=1")
 		process.ExtraFiles = append(process.ExtraFiles, r.listenFDs...)
 	}
+	// TODO *Grant*: 3 -> os.Stdout, os.Stdin, os.Stderr
 	baseFd := 3 + len(process.ExtraFiles)
 	for i := baseFd; i < baseFd+r.preserveFDs; i++ {
 		_, err = os.Stat("/proc/self/fd/" + strconv.Itoa(i))
@@ -390,6 +391,7 @@ func startContainer(context *cli.Context, action CtAct, criuOpts *libcontainer.C
 		notifySocket.setupSpec(spec)
 	}
 
+	// TODO *Grant*: runc create container
 	container, err := createContainer(context, id, spec)
 	if err != nil {
 		return -1, err
@@ -426,5 +428,6 @@ func startContainer(context *cli.Context, action CtAct, criuOpts *libcontainer.C
 		criuOpts:        criuOpts,
 		init:            true,
 	}
+	// TODO *Grant*: runc run process
 	return r.run(spec.Process)
 }

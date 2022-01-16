@@ -358,7 +358,8 @@ func (p *initProcess) waitForChildExit(childPid int) error {
 }
 
 func (p *initProcess) start() (retErr error) {
-	defer p.messageSockPair.parent.Close() //nolint: errcheck
+	defer p.messageSockPair.parent.Close()  //nolint: errcheck
+	// TODO *Grant*: runc start child process
 	err := p.cmd.Start()
 	p.process.ops = p
 	// close the write-side of the pipes (controlled by child)
@@ -412,6 +413,7 @@ func (p *initProcess) start() (retErr error) {
 	// Do this before syncing with child so that no children can escape the
 	// cgroup. We don't need to worry about not doing this and not being root
 	// because we'd be using the rootless cgroup manager in that case.
+	// TODO *Grant*: parent set cgroups
 	if err := p.manager.Apply(p.pid()); err != nil {
 		return fmt.Errorf("unable to apply cgroup configuration: %w", err)
 	}
@@ -461,6 +463,7 @@ func (p *initProcess) start() (retErr error) {
 		sentResume bool
 	)
 
+	// TODO *Grant*: parent proc fsm
 	ierr := parseSync(p.messageSockPair.parent, func(sync *syncT) error {
 		switch sync.Type {
 		case procSeccomp:
@@ -495,6 +498,7 @@ func (p *initProcess) start() (retErr error) {
 			}
 
 			// Sync with child.
+			// TODO *Grant*: parent - seccompDone -> child
 			if err := writeSync(p.messageSockPair.parent, procSeccompDone); err != nil {
 				return err
 			}
@@ -557,6 +561,7 @@ func (p *initProcess) start() (retErr error) {
 			p.container.initProcessStartTime = state.InitProcessStartTime
 
 			// Sync with child.
+			// TODO *Grant*: parent - run -> child
 			if err := writeSync(p.messageSockPair.parent, procRun); err != nil {
 				return err
 			}
@@ -589,6 +594,7 @@ func (p *initProcess) start() (retErr error) {
 				}
 			}
 			// Sync with child.
+			// TODO *Grant*: parent - resume -> child
 			if err := writeSync(p.messageSockPair.parent, procResume); err != nil {
 				return err
 			}

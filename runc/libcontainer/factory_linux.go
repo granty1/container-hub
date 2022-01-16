@@ -283,6 +283,7 @@ func (l *LinuxFactory) StartInitialization() (err error) {
 		logrus.Error(err)
 		return err
 	}
+	// TODO *Grant*: runc child process load init pipe fd from parent
 	pipe := os.NewFile(uintptr(pipefd), "pipe")
 	defer pipe.Close()
 

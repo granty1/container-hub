@@ -90,7 +90,6 @@ func newContainerInit(t initType, pipe *os.File, consoleSocket *os.File, fifoFd,
 		if mountFds != nil {
 			return nil, errors.New("mountFds must be nil. Can't mount while doing runc exec.")
 		}
-
 		return &linuxSetnsInit{
 			pipe:          pipe,
 			consoleSocket: consoleSocket,
@@ -98,6 +97,7 @@ func newContainerInit(t initType, pipe *os.File, consoleSocket *os.File, fifoFd,
 			logFd:         logFd,
 		}, nil
 	case initStandard:
+		// TODO *Grant*: child process init struct
 		return &linuxStandardInit{
 			pipe:          pipe,
 			consoleSocket: consoleSocket,
@@ -256,11 +256,13 @@ func setupConsole(socket *os.File, config *initConfig, mount bool) error {
 // indicate that it is cleared to Exec.
 func syncParentReady(pipe io.ReadWriter) error {
 	// Tell parent.
+	// TODO *Grant*: child - ready -> parent
 	if err := writeSync(pipe, procReady); err != nil {
 		return err
 	}
 
 	// Wait for parent to give the all-clear.
+	// TODO *Grant*: child <- run - parent
 	return readSync(pipe, procRun)
 }
 
@@ -269,11 +271,13 @@ func syncParentReady(pipe io.ReadWriter) error {
 // indicate that it is cleared to resume.
 func syncParentHooks(pipe io.ReadWriter) error {
 	// Tell parent.
+	// TODO *Grant*: child - hook -> parent
 	if err := writeSync(pipe, procHooks); err != nil {
 		return err
 	}
 
 	// Wait for parent to give the all-clear.
+	// TODO *Grant*: child <- resume - parent
 	return readSync(pipe, procResume)
 }
 
@@ -289,12 +293,14 @@ func syncParentSeccomp(pipe io.ReadWriter, seccompFd int) error {
 	}
 
 	// Tell parent.
+	// TODO *Grant*: child - seccomp -> parent
 	if err := writeSyncWithFd(pipe, procSeccomp, seccompFd); err != nil {
 		unix.Close(seccompFd)
 		return err
 	}
 
 	// Wait for parent to give the all-clear.
+	// TODO *Grant*: child <- seccompDone - parent
 	if err := readSync(pipe, procSeccompDone); err != nil {
 		unix.Close(seccompFd)
 		return fmt.Errorf("sync parent seccomp: %w", err)

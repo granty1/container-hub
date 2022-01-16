@@ -237,6 +237,7 @@ func RunManager(ctx context.Context, manager Manager, opts ...BinaryOpts) {
 	}
 }
 
+// TODO *Grant*: shim run
 func run(ctx context.Context, manager Manager, initFunc Init, name string, config Config) error {
 	parseFlags()
 	if versionFlag {

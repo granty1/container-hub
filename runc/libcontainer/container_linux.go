@@ -492,6 +492,7 @@ func (c *linuxContainer) commandTemplate(p *Process, childInitPipe *os.File, chi
 		cmd.SysProcAttr = &unix.SysProcAttr{}
 	}
 	cmd.Env = append(cmd.Env, "GOMAXPROCS="+os.Getenv("GOMAXPROCS"))
+	// TODO *Grant*: runc parent proc set pipe fd to env
 	cmd.ExtraFiles = append(cmd.ExtraFiles, p.ExtraFiles...)
 	if p.ConsoleSocket != nil {
 		cmd.ExtraFiles = append(cmd.ExtraFiles, p.ConsoleSocket)
@@ -590,6 +591,7 @@ func (c *linuxContainer) newInitProcess(p *Process, cmd *exec.Cmd, messageSockPa
 		)
 	}
 
+	// TODO *Grant*: runc new init process
 	init := &initProcess{
 		cmd:             cmd,
 		messageSockPair: messageSockPair,

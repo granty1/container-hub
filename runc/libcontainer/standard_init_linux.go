@@ -45,6 +45,7 @@ func (l *linuxStandardInit) getSessionRingParams() (string, uint32, uint32) {
 	return "_ses." + l.config.ContainerId, 0xffffffff, newperms
 }
 
+// TODO *Grant*: child process init
 func (l *linuxStandardInit) Init() error {
 	if !l.config.Config.NoNewKeyring {
 		if err := selinux.SetKeyLabel(l.config.ProcessLabel); err != nil {
@@ -218,6 +219,7 @@ func (l *linuxStandardInit) Init() error {
 	_ = l.pipe.Close()
 
 	// Close the log pipe fd so the parent's ForwardLogs can exit.
+	// TODO *Grant*: child proc close pipe
 	if err := unix.Close(l.logFd); err != nil {
 		return &os.PathError{Op: "close log pipe", Path: "fd " + strconv.Itoa(l.logFd), Err: err}
 	}
@@ -231,6 +233,7 @@ func (l *linuxStandardInit) Init() error {
 	if err != nil {
 		return &os.PathError{Op: "open exec fifo", Path: fifoPath, Err: err}
 	}
+	// TODO *Grant*: child write -> fifo, block child proc, wait parent read
 	if _, err := unix.Write(fd, []byte("0")); err != nil {
 		return &os.PathError{Op: "write exec fifo", Path: fifoPath, Err: err}
 	}

@@ -102,6 +102,7 @@ func NewBundle(ctx context.Context, root, state, id string, spec []byte) (b *Bun
 		return nil, err
 	}
 	// write the spec to the bundle
+	// TODO *Grant*: containerd write config.json in work dir
 	err = os.WriteFile(filepath.Join(b.Path, configFilename), spec, 0666)
 	return b, err
 }

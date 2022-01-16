@@ -158,6 +158,7 @@ func (m *ShimManager) ID() string {
 
 // Start launches a new shim instance
 func (m *ShimManager) Start(ctx context.Context, id string, opts runtime.CreateOpts) (_ ShimProcess, retErr error) {
+	// TODO *Grant*: containerd create bundle for every container
 	bundle, err := NewBundle(ctx, m.root, m.state, id, opts.Spec.Value)
 	if err != nil {
 		return nil, err
@@ -366,9 +367,8 @@ func (m *TaskManager) ID() string {
 }
 
 // Create launches new shim instance and creates new task
-// TODO *Grant*: containerd create task (dockerd start container)
+// TODO *Grant*: containerd create runtime (containerd start shim)
 func (m *TaskManager) Create(ctx context.Context, taskID string, opts runtime.CreateOpts) (runtime.Task, error) {
-	// TODO *Grant*: containerd start shim process
 	process, err := m.manager.Start(ctx, taskID, opts)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to start shim")

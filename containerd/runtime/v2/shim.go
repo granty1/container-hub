@@ -345,6 +345,7 @@ func (s *shimTask) Create(ctx context.Context, opts runtime.CreateOpts) (runtime
 		})
 	}
 
+	// TODO *Grant*: containerd call ->  shim
 	_, err := s.task.Create(ctx, request)
 	if err != nil {
 		return nil, errdefs.FromGRPC(err)
