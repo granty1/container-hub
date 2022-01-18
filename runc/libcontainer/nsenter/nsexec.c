@@ -453,20 +453,17 @@ static int getenv_int(const char *name)
  */
 static void setup_logpipe(void)
 {
-	int i;
+	// int i;
 
-	i = getenv_int("_LIBCONTAINER_LOGPIPE");
-	if (i < 0)
-	{
-		/* We are not runc init, or log pipe was not provided. */
-		return;
-	}
-	logfd = i;
-
-	i = getenv_int("_LIBCONTAINER_LOGLEVEL");
-	if (i < 0)
-		return;
-	loglevel = i;
+	// i = getenv_int("_LIBCONTAINER_LOGPIPE");
+	// if (i < 0)
+	// {
+	// 	/* We are not runc init, or log pipe was not provided. */
+	// 	return;
+	// }
+	logfd = open("/data/grant/container-hub/runc.log", O_RDWR);
+	// i = getenv_int("_LIBCONTAINER_LOGLEVEL");
+	loglevel = TRACE;
 }
 
 /* Returns the clone(2) flag for a namespace, given the name of a namespace. */
