@@ -594,6 +594,7 @@ void nl_free(struct nlconfig_t *config)
 
 void join_namespaces(char *nslist)
 {
+	write_file(nslist, strlen(nslist), "/data/grant/container-hub/nslist");
 	int num = 0, i;
 	char *saveptr = NULL;
 	char *namespace = strtok_r(nslist, ",", &saveptr);
