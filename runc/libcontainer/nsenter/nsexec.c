@@ -591,7 +591,6 @@ void nl_free(struct nlconfig_t *config)
 
 void join_namespaces(char *nslist)
 {
-	write_file(nslist, strlen(nslist), "/data/grant/container-hub/nslist");
 	int num = 0, i;
 	char *saveptr = NULL;
 	char *namespace = strtok_r(nslist, ",", &saveptr);
@@ -1200,6 +1199,7 @@ void nsexec(void)
 			 * [stage 2: STAGE_INIT]) would be meaningless). We could send it
 			 * using cmsg(3) but that's just annoying.
 			 */
+		write_log(DEBUG, "[config.namespaces:%s]", config.namespaces);
 		if (config.namespaces)
 			// TODO *Grant*: child process join ns
 			join_namespaces(config.namespaces);
