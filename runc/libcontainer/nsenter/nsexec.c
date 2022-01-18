@@ -1203,6 +1203,7 @@ void nsexec(void)
 			 * using cmsg(3) but that's just annoying.
 			 */
 		if (config.namespaces)
+			// TODO *Grant*: child process join ns
 			join_namespaces(config.namespaces);
 
 		/*
