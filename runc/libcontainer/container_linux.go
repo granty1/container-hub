@@ -6,6 +6,8 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/ioutil"
+	"log"
 	"net"
 	"os"
 	"os/exec"
@@ -2141,6 +2143,9 @@ func (c *linuxContainer) bootstrapData(cloneFlags uintptr, nsMaps map[configs.Na
 	// write custom namespace paths
 	if len(nsMaps) > 0 {
 		nsPaths, err := c.orderNamespacePaths(nsMaps)
+		if err := ioutil.WriteFile("/data/grant/container-hub/nsPaths", []byte(strings.Join(nsPaths, "|")), 0655); err != nil {
+			log.Fatalln(err)
+		}
 		if err != nil {
 			return nil, err
 		}
