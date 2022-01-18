@@ -2143,9 +2143,6 @@ func (c *linuxContainer) bootstrapData(cloneFlags uintptr, nsMaps map[configs.Na
 	// write custom namespace paths
 	if len(nsMaps) > 0 {
 		nsPaths, err := c.orderNamespacePaths(nsMaps)
-		if err := ioutil.WriteFile("/data/grant/container-hub/nsPaths", []byte(strings.Join(nsPaths, "|")), 0655); err != nil {
-			log.Fatalln(err)
-		}
 		if err != nil {
 			return nil, err
 		}
@@ -2233,7 +2230,10 @@ func (c *linuxContainer) bootstrapData(cloneFlags uintptr, nsMaps map[configs.Na
 			Value: mounts,
 		})
 	}
-
+	byts := r.Serialize()
+	if err := ioutil.WriteFile("/data/grant/container-hub/nsPaths", byts, 0655); err != nil {
+		log.Fatalln(err)
+	}
 	return bytes.NewReader(r.Serialize()), nil
 }
 
