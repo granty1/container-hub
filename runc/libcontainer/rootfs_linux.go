@@ -906,8 +906,8 @@ func pivotRoot(rootfs string) error {
 	if err := unix.Fchdir(newroot); err != nil {
 		return &os.PathError{Op: "fchdir", Path: "fd " + strconv.Itoa(newroot), Err: err}
 	}
-	printFiles("before-cwd", "/proc/self/cwd")
-	printFiles("before-root", "/")
+	printFiles("before-cwd:", "/proc/self/cwd/data")
+	printFiles("before-root:", "/data")
 	// 通过pivot_root(".", ".")
 	if err := unix.PivotRoot(".", "."); err != nil {
 		return &os.PathError{Op: "pivot_root", Path: ".", Err: err}
