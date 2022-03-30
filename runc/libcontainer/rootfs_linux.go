@@ -912,8 +912,8 @@ func pivotRoot(rootfs string) error {
 	if err := unix.PivotRoot(".", "."); err != nil {
 		return &os.PathError{Op: "pivot_root", Path: ".", Err: err}
 	}
-	printFiles("after-cwd", "/proc/self/cwd")
-	printFiles("after-root", "/")
+	printFiles("after-cwd", "/proc/self/cwd/data")
+	printFiles("after-root", "/data")
 
 	// Currently our "." is oldroot (according to the current kernel code).
 	// However, purely for safety, we will fchdir(oldroot) since there isn't
