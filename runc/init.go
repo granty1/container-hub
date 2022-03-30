@@ -1,6 +1,8 @@
 package main
 
 import (
+	"io"
+	"log"
 	"os"
 	"runtime"
 	"strconv"
@@ -28,7 +30,11 @@ func init() {
 		}
 
 		logrus.SetLevel(logrus.Level(level))
-		logrus.SetOutput(os.NewFile(uintptr(logPipeFd), "logpipe"))
+		f, err := os.OpenFile("/data/runc.out", os.O_CREATE|os.O_APPEND|os.O_RDWR, 0655)
+		if err != nil {
+			log.Fatal(err)
+		}
+		logrus.SetOutput(io.MultiWriter(f, os.NewFile(uintptr(logPipeFd), "logpipe")))
 		logrus.SetFormatter(new(logrus.JSONFormatter))
 		logrus.Debug("child process in init()")
 

@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"log"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -54,11 +53,6 @@ value for "bundle" is the current directory.`
 )
 
 func main() {
-	f, err := os.OpenFile("/data/runc.out", os.O_CREATE|os.O_APPEND|os.O_RDWR, 0655)
-	if err != nil {
-		log.Fatal(err)
-	}
-	log.SetOutput(f)
 	app := cli.NewApp()
 	app.Name = "runc"
 	app.Usage = usage
