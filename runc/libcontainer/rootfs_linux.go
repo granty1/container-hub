@@ -458,7 +458,7 @@ func mountToRootfs(m *configs.Mount, c *mountConfig) error {
 		}
 		return nil
 	case "bind":
-		log.Printf("[bind] [%+v] [%s] [%d]\n", *m, rootfs, *mountFd)
+		log.Printf("[bind] [%+v] [%s]\n", *m, rootfs)
 		if err := prepareBindMount(m, rootfs, mountFd); err != nil {
 			return err
 		}
