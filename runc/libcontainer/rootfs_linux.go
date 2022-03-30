@@ -786,11 +786,28 @@ func rootfsParentMountPrivate(rootfs string) error {
 	// reasons. First of all pivot_root() will fail if parent mount is
 	// shared. Secondly when we bind mount rootfs it will propagate to
 	// parent namespace and we don't want that to happen.
+	logrus.Warnf("[rootfs parent mount private] [share mount:%+v]\n", sharedMount)
 	if sharedMount {
 		return mount("", parentMount, "", "", unix.MS_PRIVATE, "")
 	}
 
 	return nil
+}
+
+func printMountInfo(prefix string) {
+	f, err := os.Open("/proc/self/mountinfo")
+	if err != nil {
+		logrus.Error(err.Error())
+	}
+	defer f.Close()
+
+	infos, err := mountinfo.GetMountsFromReader(f, func(info *mountinfo.Info) (skip, stop bool) {
+		return false, false
+	})
+
+	for _, v := range infos {
+		logrus.Infof("[%s] %+v\n", prefix, *v)
+	}
 }
 
 func prepareRoot(config *configs.Config) error {
@@ -800,10 +817,12 @@ func prepareRoot(config *configs.Config) error {
 	if config.RootPropagation != 0 {
 		flag = config.RootPropagation
 	}
+	printMountInfo("before mount")
 	if err := mount("", "/", "", "", uintptr(flag), ""); err != nil {
 		return err
 	}
 
+	printMountInfo("after mount")
 	// Make parent mount private to make sure following bind mount does
 	// not propagate in other namespaces. Also it will help with kernel
 	// check pass in pivot_root. (IS_SHARED(new_mnt->mnt_parent))
