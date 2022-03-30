@@ -56,7 +56,7 @@ func prepareRootfs(pipe io.ReadWriter, iConfig *initConfig, mountFds []int) (err
 	if err := prepareRoot(config); err != nil {
 		return fmt.Errorf("error preparing rootfs: %w", err)
 	}
-
+	printMountInfo("after-prepare")
 	if mountFds != nil && len(mountFds) != len(config.Mounts) {
 		return fmt.Errorf("malformed mountFds slice. Expected size: %v, got: %v. Slice: %v", len(config.Mounts), len(mountFds), mountFds)
 	}
@@ -104,7 +104,6 @@ func prepareRootfs(pipe io.ReadWriter, iConfig *initConfig, mountFds []int) (err
 			return fmt.Errorf("error setting up /dev symlinks: %w", err)
 		}
 	}
-
 	// Signal the parent to run the pre-start hooks.
 	// The hooks are run after the mounts are setup, but before we switch to the new
 	// root, so that the old root is still available in the hooks for any mount
@@ -138,6 +137,7 @@ func prepareRootfs(pipe io.ReadWriter, iConfig *initConfig, mountFds []int) (err
 		err = msMoveRoot(config.Rootfs)
 	} else if config.Namespaces.Contains(configs.NEWNS) {
 		err = pivotRoot(config.Rootfs)
+		printMountInfo("after-pivot")
 	} else {
 		err = chroot()
 	}
@@ -817,12 +817,13 @@ func prepareRoot(config *configs.Config) error {
 	if config.RootPropagation != 0 {
 		flag = config.RootPropagation
 	}
-	printMountInfo("before mount")
+	printMountInfo("before-mount")
+	// 添加 / /home/docker/overlay2/49cf1 mount到 mountinfo
 	if err := mount("", "/", "", "", uintptr(flag), ""); err != nil {
 		return err
 	}
 
-	printMountInfo("after mount")
+	printMountInfo("after-mount")
 	// Make parent mount private to make sure following bind mount does
 	// not propagate in other namespaces. Also it will help with kernel
 	// check pass in pivot_root. (IS_SHARED(new_mnt->mnt_parent))
