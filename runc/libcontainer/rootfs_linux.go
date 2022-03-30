@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log"
 	"os"
 	"os/exec"
 	"path"
@@ -69,6 +70,7 @@ func prepareRootfs(pipe io.ReadWriter, iConfig *initConfig, mountFds []int) (err
 		cgroupns:        config.Namespaces.Contains(configs.NEWCGROUP),
 	}
 	setupDev := needsSetupDev(config)
+	// 开始挂载 /proc等 到根
 	for i, m := range config.Mounts {
 		for _, precmd := range m.PremountCmds {
 			if err := mountCmd(precmd); err != nil {
@@ -121,6 +123,7 @@ func prepareRootfs(pipe io.ReadWriter, iConfig *initConfig, mountFds []int) (err
 	// container. It's just cleaner to do this here (at the expense of the
 	// operation not being perfectly split).
 
+	//  当前/proc/self/cwd 切换到new rootfs path下 -> /home/docker/overlay2/l/F6HNHL67
 	if err := unix.Chdir(config.Rootfs); err != nil {
 		return &os.PathError{Op: "chdir", Path: config.Rootfs, Err: err}
 	}
@@ -136,6 +139,7 @@ func prepareRootfs(pipe io.ReadWriter, iConfig *initConfig, mountFds []int) (err
 	if config.NoPivotRoot {
 		err = msMoveRoot(config.Rootfs)
 	} else if config.Namespaces.Contains(configs.NEWNS) {
+		// 切换rootfs -> new rootfs
 		err = pivotRoot(config.Rootfs)
 		printMountInfo("after-pivot")
 	} else {
@@ -818,7 +822,8 @@ func prepareRoot(config *configs.Config) error {
 		flag = config.RootPropagation
 	}
 	printMountInfo("before-mount")
-	// 添加 / /home/docker/overlay2/49cf1 mount到 mountinfo
+	// 进入新的 mount namespace
+	// 将根挂载点模式修改为salve
 	if err := mount("", "/", "", "", uintptr(flag), ""); err != nil {
 		return err
 	}
@@ -827,10 +832,12 @@ func prepareRoot(config *configs.Config) error {
 	// Make parent mount private to make sure following bind mount does
 	// not propagate in other namespaces. Also it will help with kernel
 	// check pass in pivot_root. (IS_SHARED(new_mnt->mnt_parent))
+	// 如果是shared则修改为private， slave不变
 	if err := rootfsParentMountPrivate(config.Rootfs); err != nil {
 		return err
 	}
 
+	// 令salve生效，后续所有子挂载将不会影响原namespace
 	return mount(config.Rootfs, config.Rootfs, "", "bind", unix.MS_BIND|unix.MS_REC, "")
 }
 
@@ -860,6 +867,17 @@ func setupPtmx(config *configs.Config) error {
 	return nil
 }
 
+func printFiles(prefix string, path string) {
+	ds, err := os.ReadDir(path)
+	if err != nil {
+		log.Fatalln(err.Error())
+	}
+
+	for _, v := range ds {
+		logrus.Info(prefix, v.Name())
+	}
+}
+
 // pivotRoot will call pivot_root such that rootfs becomes the new root
 // filesystem, and everything else is cleaned up.
 func pivotRoot(rootfs string) error {
@@ -869,12 +887,14 @@ func pivotRoot(rootfs string) error {
 	// with pivot_root this allows us to pivot without creating directories in
 	// the rootfs. Shout-outs to the LXC developers for giving us this idea.
 
+	// 保留old root的fd
 	oldroot, err := unix.Open("/", unix.O_DIRECTORY|unix.O_RDONLY, 0)
 	if err != nil {
 		return &os.PathError{Op: "open", Path: "/", Err: err}
 	}
 	defer unix.Close(oldroot) //nolint: errcheck
 
+	// 打开new root的fd
 	newroot, err := unix.Open(rootfs, unix.O_DIRECTORY|unix.O_RDONLY, 0)
 	if err != nil {
 		return &os.PathError{Op: "open", Path: rootfs, Err: err}
@@ -882,13 +902,18 @@ func pivotRoot(rootfs string) error {
 	defer unix.Close(newroot) //nolint: errcheck
 
 	// Change to the new root so that the pivot_root actually acts on it.
+	// 将/proc/self/cwd 设置为 new root
 	if err := unix.Fchdir(newroot); err != nil {
 		return &os.PathError{Op: "fchdir", Path: "fd " + strconv.Itoa(newroot), Err: err}
 	}
-
+	printFiles("before-cwd", "/proc/self/cwd")
+	printFiles("before-root", "/")
+	// 通过pivot_root(".", ".")
 	if err := unix.PivotRoot(".", "."); err != nil {
 		return &os.PathError{Op: "pivot_root", Path: ".", Err: err}
 	}
+	printFiles("after-cwd", "/proc/self/cwd")
+	printFiles("after-root", "/")
 
 	// Currently our "." is oldroot (according to the current kernel code).
 	// However, purely for safety, we will fchdir(oldroot) since there isn't
