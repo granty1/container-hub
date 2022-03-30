@@ -924,6 +924,9 @@ func pivotRoot(rootfs string) error {
 		return &os.PathError{Op: "fchdir", Path: "fd " + strconv.Itoa(oldroot), Err: err}
 	}
 
+	printFiles("fchdir_oldroot-cwd", "/proc/self/cwd/data")
+	printFiles("fchdir_oldroot", "/data")
+
 	// Make oldroot rslave to make sure our unmounts don't propagate to the
 	// host (and thus bork the machine). We don't use rprivate because this is
 	// known to cause issues due to races where we still have a reference to a
