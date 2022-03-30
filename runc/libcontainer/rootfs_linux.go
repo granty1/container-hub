@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log"
 	"os"
 	"os/exec"
 	"path"
@@ -133,6 +134,7 @@ func prepareRootfs(pipe io.ReadWriter, iConfig *initConfig, mountFds []int) (err
 		return err
 	}
 
+	log.Printf("[prepare rootfs] [config no pivot root:%+v]\n", config.NoPivotRoot)
 	if config.NoPivotRoot {
 		err = msMoveRoot(config.Rootfs)
 	} else if config.Namespaces.Contains(configs.NEWNS) {
@@ -420,6 +422,7 @@ func mountToRootfs(m *configs.Mount, c *mountConfig) error {
 		if err := os.MkdirAll(dest, 0o755); err != nil {
 			return err
 		}
+		log.Printf("[proc/sysfs] [%v] [%s]\n", *m, rootfs)
 		// Selinux kernels do not support labeling of /proc or /sys
 		return mountPropagate(m, rootfs, "", nil)
 	case "mqueue":
@@ -455,6 +458,7 @@ func mountToRootfs(m *configs.Mount, c *mountConfig) error {
 		}
 		return nil
 	case "bind":
+		log.Printf("[bind] [%+v] [%s] [%d]\n", *m, rootfs, *mountFd)
 		if err := prepareBindMount(m, rootfs, mountFd); err != nil {
 			return err
 		}
@@ -766,6 +770,7 @@ func rootfsParentMountPrivate(rootfs string) error {
 	sharedMount := false
 
 	parentMount, optionalOpts, err := getParentMount(rootfs)
+	log.Printf("[rootfs parent mount private] [parent mount:%s] [optionals:%s]\n", parentMount, optionalOpts)
 	if err != nil {
 		return err
 	}
@@ -790,7 +795,9 @@ func rootfsParentMountPrivate(rootfs string) error {
 }
 
 func prepareRoot(config *configs.Config) error {
+	log.Printf("[parepare root] [rootfs:%s]\n", config.Rootfs)
 	flag := unix.MS_SLAVE | unix.MS_REC
+	log.Printf("[parepare root] [root propagation:%d]\n", config.RootPropagation)
 	if config.RootPropagation != 0 {
 		flag = config.RootPropagation
 	}
