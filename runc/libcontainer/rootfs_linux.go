@@ -906,14 +906,13 @@ func pivotRoot(rootfs string) error {
 	if err := unix.Fchdir(newroot); err != nil {
 		return &os.PathError{Op: "fchdir", Path: "fd " + strconv.Itoa(newroot), Err: err}
 	}
-	printFiles("before-cwd:", "/proc/self/cwd/data")
-	printFiles("before-root:", "/data")
-	// 通过pivot_root(".", ".")
+	// /proc/self/cwd -> /home/docker/overlay2/xxx
+	//        /       ->host:/
 	if err := unix.PivotRoot(".", "."); err != nil {
 		return &os.PathError{Op: "pivot_root", Path: ".", Err: err}
 	}
-	printFiles("after-cwd", "/proc/self/cwd/data")
-	printFiles("after-root", "/data")
+	// /proc/self/cwd -> /home/docker/overlay2/xxx
+	//        /       -> /home/docker/overlay2/xxx
 
 	// Currently our "." is oldroot (according to the current kernel code).
 	// However, purely for safety, we will fchdir(oldroot) since there isn't
@@ -924,14 +923,15 @@ func pivotRoot(rootfs string) error {
 		return &os.PathError{Op: "fchdir", Path: "fd " + strconv.Itoa(oldroot), Err: err}
 	}
 
-	printFiles("fchdir_oldroot-cwd", "/proc/self/cwd/data")
-	printFiles("fchdir_oldroot", "/data")
+	// /proc/self/cwd -> host:/
+	//        /       -> /home/docker/overlay2/xxx
 
 	// Make oldroot rslave to make sure our unmounts don't propagate to the
 	// host (and thus bork the machine). We don't use rprivate because this is
 	// known to cause issues due to races where we still have a reference to a
 	// mount while a process in the host namespace are trying to operate on
 	// something they think has no mounts (devicemapper in particular).
+	// 使得old root 成为slave
 	if err := mount("", ".", "", "", unix.MS_SLAVE|unix.MS_REC, ""); err != nil {
 		return err
 	}
@@ -939,6 +939,9 @@ func pivotRoot(rootfs string) error {
 	if err := unmount(".", unix.MNT_DETACH); err != nil {
 		return err
 	}
+
+	printFiles("***:", "/proc/self/cwd/data")
+	printFiles("***:", "/data")
 
 	// Switch back to our shiny new root.
 	if err := unix.Chdir("/"); err != nil {
