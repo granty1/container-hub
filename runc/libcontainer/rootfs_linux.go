@@ -874,7 +874,7 @@ func printFiles(prefix string, path string) {
 	}
 
 	for _, v := range ds {
-		logrus.Info(prefix, v.Name())
+		logrus.Info(prefix+":\t", v.Name())
 	}
 }
 
@@ -911,6 +911,9 @@ func pivotRoot(rootfs string) error {
 	if err := unix.PivotRoot(".", "."); err != nil {
 		return &os.PathError{Op: "pivot_root", Path: ".", Err: err}
 	}
+
+	printFiles("after-pivot_root", "/proc/self/cwd/data")
+	printFiles("after-pivot_root", "/data")
 	// /proc/self/cwd -> /home/docker/overlay2/xxx
 	//        /       -> /home/docker/overlay2/xxx
 
@@ -932,6 +935,8 @@ func pivotRoot(rootfs string) error {
 	// mount while a process in the host namespace are trying to operate on
 	// something they think has no mounts (devicemapper in particular).
 	// 使得old root 成为slave
+	printFiles("before-umount", "/proc/self/cwd/data")
+	printFiles("before-umount", "/data")
 	if err := mount("", ".", "", "", unix.MS_SLAVE|unix.MS_REC, ""); err != nil {
 		return err
 	}
@@ -939,14 +944,19 @@ func pivotRoot(rootfs string) error {
 	if err := unmount(".", unix.MNT_DETACH); err != nil {
 		return err
 	}
-
-	printFiles("***:", "/proc/self/cwd/data")
-	printFiles("***:", "/data")
+	printFiles("after-umount", "/proc/self/cwd/data")
+	printFiles("after-umount", "/data")
+	// /proc/self/cwd -> host:/
+	//        /       -> /home/docker/overlay2/xxx
 
 	// Switch back to our shiny new root.
 	if err := unix.Chdir("/"); err != nil {
 		return &os.PathError{Op: "chdir", Path: "/", Err: err}
 	}
+
+	// /proc/self/cwd -> /home/docker/overlay2/xxx
+	//        /       -> /home/docker/overlay2/xxx
+
 	return nil
 }
 
